@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Yellowholic</title>
+    <style>
+    /*a { color: blue;}
+    a:visited { color: purple; }*/
+
+    /* :hover is a pseudo-class */
+/*    circle:hover {
+      fill: orange;
+    }*/
+    /* NO SPACE - all circles with class of 'selected' */
+    /*circle.selected {
+      fill: red;
+    }*/
+
+    *{ text-align: center;
+          font-family: 'Nunito', sans-serif;}
+
+    /*.infobox{
+              background-color: blue;
+              color:white;
+          }*/
+
+    /*h2 {
+    text-decoration: underline;
+    text-decoration-color: red;
+    }*/
+
+    </style>
+    <link href='https://fonts.googleapis.com/css?family=Nunito:700' rel='stylesheet' type='text/css'>
+  </head>
+  <body>
+    <h1>Shades of yellow</h1>
+    <!-- https://github.com/jsoma/storytelling-2015 -->
+
+    <!--
+    Two ways to hide things in css:
+    display: none;
+    visibility: hidden;
+      -->
+    <div class="infobox" style="visibility: hidden;">
+      <!-- <h2 class="color">Yellow</h2> -->
+      <h2 class="color-name">Color Name!</h2>
+      <p>Hex triplet: <strong class="hex">#FADA5E</strong> //
+      Origin: <strong class="color-origin">1620</strong> A.D.</p>
+    </div>
+
+    <div id="graph"></div>
+
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+
+    <script>
+    var datapoints = [
+      { 'name': 'Amber', 'hex': '#FFBF00', 'origin': 1500, 'RGB': '(255,191,0)', 'yellowness': 446},
+      { 'name': 'Aureolin', 'hex': '#FDEE00', 'origin': 1848 , 'RGB': '(253,238,0)', 'yellowness': 491},
+      { 'name': 'Chartreuse', 'hex': '#DFFF00', 'origin': 1764, 'RGB':'(223,255,0)', 'yellowness': 478},
+      { 'name': 'Jonquil', 'hex': '#F4CA16', 'origin': 1789, 'RGB':'(244,202,22)', 'yellowness': 424},
+      { 'name': 'Naples yellow', 'hex': '#FADA5E', 'origin': 1620, 'RGB':'(250,218,94)','yellowness': 374},
+
+      { 'name': 'Ecru', 'hex': '#C2B280', 'origin': 1930, 'RGB':'(194, 178, 128)','yellowness': 144},
+      { 'name': 'Saffron', 'hex': '#F4C430', 'origin': 1200, 'RGB':'(244, 196, 48)','yellowness': 392},
+      { 'name': 'Citrine', 'hex': '#E4D00A', 'origin': 1386, 'RGB':'(228, 208, 10)','yellowness': 426},
+      { 'name': 'Lemon chiffon', 'hex': '#FFFACD', 'origin': 1987, 'RGB':'(255, 250, 205)','yellowness': 300},
+      { 'name': 'Old gold', 'hex': '#CFB53B', 'origin': 1900, 'RGB':'(207, 181, 59)','yellowness': 329},
+    ];
+    // yellowness = R + G - B
+
+    //padding
+    var margin = {top: 20, right: 20, bottom: 30, left: 40},
+        width = 700 - margin.left - margin.right,
+        height = 200 - margin.top - margin.bottom;
+
+    // select the id
+    var svg = d3.select("#graph").append("svg").attr('height', height + margin.top + margin.bottom ).attr('width',  width + margin.left + margin.right );
+
+    var xscale = d3.scale.linear().domain([1200, 1900]).range([0, width]);
+
+    // because 0 is the top for y, it's the opposite of what you'd think
+    var yscale = d3.scale.linear().domain([0, 491]).range([height, 0]);
+
+    var circles = svg.selectAll('circle')
+                      .data(datapoints)
+                      .enter()
+                      .append('circle')
+                      .attr('cx', function(d) {
+                        // use the origin key vs the x scale
+                        return xscale(d['origin'])+ 15;
+                      })
+                      .attr('cy', function(d) {
+                        // use the words key vs the y scale
+                        return yscale(d['yellowness']) + 30;
+                      })
+                      // .style('fill', '#000000')
+                      .attr('r', 10)
+                      .on('click', function(d) {
+                        d3.select(".color-name").text(d['name']);
+                        d3.select(".hex").text(d['hex']);
+                        d3.select(".color-origin").text(d['origin']);
+                        d3.select(".infobox").style('visibility', 'visible');
+                        // just grabs the first circle
+                        // d3.select('circle').style('fill', 'red');
+
+                        // Method 1:
+                        // // reset their colors and turn them all black
+                        svg.selectAll('circle').transition().style('fill', 'black').attr('class', '').attr('r', 10);
+                        // eventually turn the clicked one red
+                        // d3.select(this).transition().duration(250).style('fill', 'red');
+                        d3.select(this).transition().duration(250).style('fill', function(d){
+                          return d['hex']
+                        }).attr('class', 'selected').attr('r', 15);
+
+      var axis = d3.svg.axis()
+                   .orient('bottom')
+                   .ticks(3)
+                                          // .tickValues([0,250,500,1000])
+                   .scale(xscale);
+
+                        // call your axis to show up
+     circles.append('g')
+            .attr('transform', 'translate(0,'+height+')') // positioning
+                            .attr('class', 'xaxis')
+                            .call(axis)
+
+                            // .append("text")
+                            // .attr("class", "label")
+                            .attr("x", width)
+                            .attr("y", -6)
+                            // .style("text-anchor", "end")
+                            // .text("Return on Taxpayer Investment");
+                        // d3.select(this).addClass('highlight').siblings().removeClass('highlight');
+
+                        // svg.selectAll("circle").transition().attr('class', '').attr('r', 10);
+                        // d3.select(this).transition().attr('class', 'selected').attr('r', 20);
+
+                        // Method 2:
+                        // svg.selectAll("circle").transition().attr('class', '').attr('r', 10);
+                        // d3.select(this).transition().attr('class', 'selected').attr('r', 20);
+                        // console.log(this);
+                      })
+                      // .on('mouseover', function(d) {
+                      //   // turn the element that is mouseover'd orange
+                      //   d3.select(this).style('fill', 'gray');
+                      // })
+                      // .on('mouseout', function(d) {
+                      //   d3.select(this).style('fill', '#000000');
+                      // });
+
+    </script>
+  </body>
+</html>

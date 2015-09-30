@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <link href='https://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+
+    <title></title>
+  </head>
+  <body>
+    <div class="container">
+        <button ><a href="#" id="myButton">shuffle</a></button>
+
+
+        <!-- <div style="background-color:black; color:white; padding:20px;"> -->
+        <div id="text_bloc">
+
+        <p> Since I have not figured out how to make a legend and how to sort the bars...... Allow me to explain in text at this moment ha.
+          The color of a bar represents the continent it belongs to. Hope you notice something interesting as I do! Here are mine:</p>
+
+      <h1><ul><li>Botswana, a landlocked country located in Southern Africa, has approxiamtely the same GDP per capita as Malysia.</li>
+      <li>India's GDP per capita is similar to Cuba and Ghana.</li>
+      <li> The GDP per capita of USA is abount the sum of the last half countries in this graph.</li></ul></h1>
+      </div>
+      <svg></svg>
+    </div>
+
+  	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+    <!-- <script src="d3.legend.js"></script> -->
+    <style>
+
+    * {
+      background-color: #fafafa;
+    }
+
+    .axis path,
+    .axis line {
+        fill: none;
+        stroke: #575757;
+        stroke-width: 1.8;
+        shape-rendering: crispEdges;
+    }
+
+    .axis text {
+        font-family: 'Lato', sans-serif;
+        font-size: 14px;
+    }
+    .ylabel {
+      font-family: 'Lato', sans-serif;
+      font-size: 11px;
+    }
+    h1{
+      font-size: 18px
+    }
+
+    /*get rid of ugly default grey padding */
+
+    #myButton {
+        background-color:#494949;
+  	-moz-border-radius:30px;
+  	-webkit-border-radius:30px;
+  	border-radius:30px;
+
+  	border:2px solid #424242;
+  	display:inline-block;
+  	cursor:pointer;
+  	color:#ffffff;
+  	font-family: Lato;
+  	font-size:17px;
+  	padding:10px 25px;
+  	text-decoration:none;
+  	text-shadow:0px 1px 0px #2f6627;
+    }
+
+    #myButton:hover {
+background-color:#696969;
+}
+
+.container {
+  width: 700px;
+  margin: 0 auto;
+}
+button{
+  background-color: transparent;
+  border: 0px;
+  opacity: 0.5;
+  margin-right: -50%;
+  margin: 0 auto;
+  display: block;
+}
+
+    </style>
+    <script>
+    var datapoints = [{"Country":"Germany","Continent":"Europe","GDP":31400},
+    {"Country":"Singapore","Continent":"Asia","GDP":30900},
+    {"Country":"Japan","Continent":"Asia","GDP":33100},
+    {"Country":"Hungary","Continent":"Europe","GDP":17300},
+    {"Country":"South Korea","Continent":"Asia","GDP":24200},
+    {"Country":"UK","Continent":"Europe","GDP":31400},
+    {"Country":"Cuba","Continent":"North America","GDP":3900},
+    {"Country":"France","Continent":"Europe","GDP":30100},
+    {"Country":"China","Continent":"Asia","GDP":7600},
+    {"Country":"USA","Continent":"North America","GDP":43500},
+    {"Country":"Brazil","Continent":"South America","GDP":8600},
+    {"Country":"Algeria","Continent":"Africa","GDP":7700},
+    {"Country":"India","Continent":"Asia","GDP":3700},
+    {"Country":"Malaysia","Continent":"Asia","GDP":12700},
+    {"Country":"Botswana","Continent":"Africa","GDP":11400},
+    {"Country":"Pakistan","Continent":"Asia","GDP":2600},
+    {"Country":"Bangladesh","Continent":"Asia","GDP":2200},
+    {"Country":"Ghana","Continent":"Africa","GDP":2600},
+    {"Country":"Ethiopia","Continent":"Africa","GDP":1000},
+    {"Country":"Kenya","Continent":"Africa","GDP":1200},
+    {"Country":"Chad","Continent":"Africa","GDP":1500}];
+
+ /*BASE: SVG & MARGIN
+    set the whole svg*/
+    var svg_height = 500,
+        svg_width = 750;
+    var svg = d3.select("svg").attr('height', svg_height).attr('width', svg_width);
+
+    /*set inner canvas for cahrt*/
+    var margin = { 'top': 20, 'left': 80, 'bottom': 125, 'right': 20 };
+    var chart = svg.append("g").attr('transform', 'translate(' + margin['left'] + ',' + margin['right'] + ')');
+    /*// push the whole <g> the chart 20px left and 20px left*/
+
+    /*// subtract margin for the top AND the bottom*/
+    var height = svg_height - margin['top'] - margin['bottom']; // 500-20-125 = 355
+    /*// subtract margin for the left AND the right*/
+    var width = svg_width - margin['left'] - margin['right']; // 750-20-20 = 710
+
+/*SCALES
+  // Vertical bar chart:
+  // x_scale for categorical var
+  // y_scale goes with data*/
+
+  /*//domain ==> data ||| range ==> visual (whats shown on the screen)
+
+  // range bands to the rescue for non-numeric domains
+  // https://github.com/mbostock/d3/wiki/Ordinal-Scales#ordinal_rangeBands
+  // http://jaketrent.com/post/use-d3-rangebands/
+  // and ORDINAL scale is for categorical data*/
+    var countries = datapoints.map( function(d) { return d['Country'] });
+
+    var x_scale = d3.scale.ordinal().domain(countries).rangeBands([0, width], 0.5, 0.2);
+    /*//.rangeRoundBands([0, elementWidth], barPad, barOuterPad)*/
+
+    var y_scale = d3.scale.linear().domain([0, 43500]).range([height, 0]);
+
+
+
+/*AXIS*/
+    var xAxis = d3.svg.axis()
+      .scale(x_scale)
+      .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+      .scale(y_scale)
+      .orient("left");
+
+
+    chart.append('g').attr('class','axis y-axis').call(yAxis).attr("transform", "translate(0,0)");
+
+    chart.append('g').attr('class','axis x-axis')
+                    .call(xAxis)
+                    .attr("transform", "translate(0," + height + ")")
+                    /*//.style({'stroke': 'Black', 'fill': 'none', 'stroke-width': '1.5px'})*/
+                    .selectAll("text")
+                    .attr("y", -5)
+                    .attr("x", 9)
+                    /*// .attr("dy", ".35em")*/
+                    .attr("transform", "rotate(90)")
+                    .style("text-anchor", "start");
+                    ; /*// not sure why need to add height*/
+
+    // add y axis label
+    chart.append("text")
+              .attr("class", "ylabel")
+              .attr("text-anchor", "end")
+              .attr("y", 0)
+              .attr("x", -5)
+              .attr("dy", ".em")
+              .attr("transform", "rotate(0)")
+              .text("GDP")
+              .style("font-size","1px");
+
+
+    chart.append("text")
+              .attr("class", "ylabel")
+              .attr("text-anchor", "end")
+              .attr("y", 12)
+              .attr("x", -5)
+              .attr("dy", ".1em")
+              .attr("transform", "rotate(0)")
+              .text("per capita")
+              .style("font-size","0.5px");
+
+/*BAR*/
+var rectangles = chart.selectAll('rect')
+                      .data(datapoints)
+                              .enter()
+                              .append('rect')
+                              .attr('x', function(d) {
+                                return x_scale(d['Country']);
+                              })
+                              .attr('width', x_scale.rangeBand())
+
+                              //.attr('y', 0)
+                              .attr('y', function(d) {
+                               return y_scale(d['GDP'])
+                             })
+                              .attr('height', function(d) {
+                                return height - y_scale(d['GDP']);
+                              })
+                              .style('fill', 'grey')
+                              .style('fill', function(d){
+                                if (d['Continent'] === 'Asia'){
+                                  return '#f84525';
+                                } else if (d['Continent'] === 'Europe'){
+                                  return '#4587de';
+                                } else if (d['Continent'] === 'North America'){
+                                  return '#ffc500';
+                                } else if (d['Continent'] === 'South America'){
+                                  return '#c39034';
+                                } else{
+                                  return '#66cdaa';}
+                                  //Africa
+                                })
+                                .attr("data-legend",function(d) {
+                                  return d['Country']
+                                });
+
+
+// UPDATEs
+// common d3 function names:
+// render, update, ready
+
+function update(new_data) {
+
+// change data, make a new x scale for it
+  var countries = new_data.map( function(d) { return d['Country'] });
+  x_scale.domain(countries);
+
+  chart.select('.x-axis').transition().duration(1000)
+                  .call(xAxis)
+                  .attr("transform", "translate(0," + height + ")")
+                  .selectAll("text")
+                  .attr("y", -5)
+                  .attr("x", 9)
+                  .attr("transform", "rotate(90)")
+                  .style("text-anchor", "start");
+
+
+  // DEAL WITH THE NEW ONES
+  // first thing, let's create those new rectangles
+  chart.selectAll('rect').transition().duration(1000)
+            .attr('x', function(d) {
+              return x_scale(d['Country']);
+            })
+            .attr('width', x_scale.rangeBand())
+
+            //.attr('y', 0)
+            .attr('y', function(d) {
+             return y_scale(d['GDP'])
+           })
+            // .attr('height', function(d) {
+            //   return height - y_scale(d['GDP']);
+            // })
+            .attr('height', function(d) {
+              return height - y_scale(d['GDP']);
+            })
+
+  // DEAL WITH ALL OF THEM
+  // next thing, update all the rectangles to
+  // be the right width
+  // since we did .enter().append() already,
+  // rectangles now has all of the rects in it
+  rectangles.transition().duration(1000)
+            // .delay( function(d, i) {
+            //   return i * 250;
+            // })
+            .attr('height', function(d) {
+                return height - y_scale(d['GDP']);
+            })
+            .attr('x', function(d) {
+              return x_scale(d['Country']);
+            });
+          }; // this } ==> the end of update func
+
+update(datapoints);
+
+d3.select("#myButton").on('click', function() {
+        d3.shuffle(datapoints);
+        update(datapoints);
+      });
+
+    </script>
+
+  </body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <link href='https://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+
+    <title></title>
+  </head>
+  <body>
+
+  <div class="text-bloc">
+
+          <h2> See the outlier little dot? It's not the dust on your screen. (It might be though.)
+            That's Botswana.</h2>
+          <h3> The life expectancy of men and women is around 33. It's way lower than other African countries in this graph; here is the possible reason behind <a href="http://www.theguardian.com/world/2002/jul/08/research.medicalscience"> that</a>. </h3>
+  </div>
+
+  <div class="container">
+
+    <svg></svg>
+
+  </div>
+
+    <style>
+    .text-bloc{
+      width: 700px;
+      margin-left: 500px;
+    }
+    .container {
+      width: 700px;
+      margin: 0 auto;
+    }
+
+
+    .axis path,
+    .axis line {
+        fill: none;
+        stroke: #575757;
+        stroke-width: 1.8;
+        shape-rendering: auto;
+        opacity: 0.5;
+        /*shape-rendering: crispEdges;*/
+    }
+    .axis y_axis {
+      fill: red;
+    }
+
+    .axis text {
+        font-family: 'Lato', sans-serif;
+        font-size: 14px;
+    }
+
+    .ylabel {
+      font-family: 'Lato', sans-serif;
+      font-size: 11px;
+    }
+
+    /* :hover is a pseudo-class */
+    circle:hover {
+      fill: orange;
+    }
+    circle {
+      fill: #66cdaa;
+      opacity: .6;
+    }
+
+/*http://bl.ocks.org/Caged/6476579*/
+    .d3-tip {
+      line-height: 1;
+      font-weight: bold;
+      padding: 12px;
+      background: #cbbeb5;
+      color: #fff;
+      border-radius: 2px;
+    }
+
+    /* Creates a small triangle extender for the tooltip */
+    .d3-tip:after {
+      box-sizing: border-box;
+      display: inline;
+      font-size: 10px;
+      width: 100%;
+      line-height: 1;
+      color: #cbbeb5;
+      content: "\25BC";
+      position: absolute;
+      text-align: center;
+    }
+
+    /* Style northward tooltips differently */
+    .d3-tip.n:after {
+      margin: -1px 0 0 0;
+      top: 100%;
+      left: 0;
+    }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+    <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+    <script>
+    var datapoints = [{"Country":"Ethiopia","Continent":"Africa","Population":74.7,"Death Rate":14.86,"LE Men":47.86,"LE Women":50.24,"GDP":1000},
+{"Country":"Kenya","Continent":"Africa","Population":34.7,"Death Rate":14.02,"LE Men":49.78,"LE Women":48.07,"GDP":1200},
+{"Country":"Algeria","Continent":"Africa","Population":32.9,"Death Rate":4.61,"LE Men":71.68,"LE Women":74.92,"GDP":7700},
+{"Country":"Ghana","Continent":"Africa","Population":22.4,"Death Rate":9.72,"LE Men":58.07,"LE Women":59.69,"GDP":2600},
+{"Country":"Chad","Continent":"Africa","Population":9.9,"Death Rate":16.38,"LE Men":45.88,"LE Women":49.21,"GDP":1500},
+{"Country":"Botswana","Continent":"Africa","Population":1.6,"Death Rate":29.5,"LE Men":33.9,"LE Women":33.56,"GDP":11400},
+{"Country":"China","Continent":"Asia","Population":1314,"Death Rate":6.97,"LE Men":70.89,"LE Women":74.46,"GDP":7600},
+{"Country":"India","Continent":"Asia","Population":1095.4,"Death Rate":8.18,"LE Men":63.9,"LE Women":65.57,"GDP":3700},
+{"Country":"Pakistan","Continent":"Asia","Population":165.8,"Death Rate":8.23,"LE Men":62.4,"LE Women":64.44,"GDP":2600},
+{"Country":"Bangladesh","Continent":"Asia","Population":147.4,"Death Rate":8.27,"LE Men":62.47,"LE Women":62.45,"GDP":2200},
+{"Country":"Japan","Continent":"Asia","Population":127.5,"Death Rate":9.16,"LE Men":77.96,"LE Women":84.7,"GDP":33100},
+{"Country":"South Korea","Continent":"Asia","Population":48.8,"Death Rate":5.85,"LE Men":73.61,"LE Women":80.75,"GDP":24200},
+{"Country":"Malaysia","Continent":"Asia","Population":24.4,"Death Rate":5.05,"LE Men":69.8,"LE Women":75.38,"GDP":12700},
+{"Country":"Singapore","Continent":"Asia","Population":4.5,"Death Rate":4.28,"LE Men":79.13,"LE Women":84.49,"GDP":30900},
+{"Country":"Germany","Continent":"Europe ","Population":82.4,"Death Rate":10.62,"LE Men":75.81,"LE Women":81.96,"GDP":31400},
+{"Country":"France","Continent":"Europe ","Population":62.7,"Death Rate":9.14,"LE Men":76.1,"LE Women":83.54,"GDP":30100},
+{"Country":"UK","Continent":"Europe ","Population":60.6,"Death Rate":10.13,"LE Men":76.09,"LE Women":81.13,"GDP":31400},
+{"Country":"Hungary","Continent":"Europe ","Population":18,"Death Rate":13.11,"LE Men":68.45,"LE Women":77.14,"GDP":17300},
+{"Country":"USA","Continent":"North America","Population":298,"Death Rate":8.26,"LE Men":75.02,"LE Women":80.82,"GDP":43500},
+{"Country":"Cuba","Continent":"North America","Population":11.3,"Death Rate":7.22,"LE Men":75.11,"LE Women":79.85,"GDP":3900},
+{"Country":"Brazil","Continent":"South America","Population":188.1,"Death Rate":6.17,"LE Men":68.02,"LE Women":76.12,"GDP":8600}
+];
+
+// Sort the data descendingly to make little circles on top of larger ones
+datapoints.sort( function(a, b) {
+  // return Math.sqrt(a['Population']) > Math.sqrt(b['Population']);
+  return a['Population'] < b['Population'];
+
+})
+ /*BASE: SVG & MARGIN
+    set the whole svg*/
+    var svg_height = 750,
+        svg_width = 750;
+    var svg = d3.select("svg").attr('height', svg_height).attr('width', svg_width);
+
+    /*set inner canvas for cahrt*/
+    var margin = { 'top': 100, 'left': 80, 'bottom': 125, 'right': 20 };
+    var chart = svg.append("g").attr('transform', 'translate(' + margin['left'] + ',' + margin['right'] + ')');
+    /*// push the whole <g> the chart 20px left and 20px left*/
+
+    /*// subtract margin for the top AND the bottom*/
+    var height = svg_height - margin['top'] - margin['bottom']; // 500-20-125 = 355
+    /*// subtract margin for the left AND the right*/
+    var width = svg_width - margin['left'] - margin['right']; // 750-20-20 = 710
+
+
+  var x_scale =d3.scale.linear().domain([0, 100]).range([0, width]);
+  var y_scale =d3.scale.linear().domain([0, 100]).range([height, 0]);
+
+/*AXIS*/
+    var xAxis = d3.svg.axis()
+      .scale(x_scale)
+      .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+      .scale(y_scale)
+      .orient("left");
+
+
+    chart.append('g').attr('class','axis y_axis')
+                     .call(yAxis)
+                     .attr("transform", "translate(0,0)");
+
+
+    chart.append('g').attr('class','axis x_axis')
+                    .call(xAxis)
+                    .attr("transform", "translate(0," + height + ")")
+
+
+    var tip = d3.tip()
+      .attr('class', 'd3-tip')
+      .offset([-10, 0])
+      .html(function(d) {
+        return "<center><span style='color:black'>" + d['Country'] + "</font><br> " + d['Population'] +" million people</span></center>";
+      });
+
+    chart.call(tip);
+    chart.append("text")
+              .attr("class", "ylabel")
+              .attr("text-anchor", "end")
+              .attr("y", 6)
+              .attr("dy", "1em")
+              .attr("transform", "rotate(-90)")
+              .text("Life Expectancy Women");
+
+    chart.append("text")
+              .attr("class", "xlabel")
+              .attr("text-anchor", "end")
+              .attr("x", width)
+              .attr("y", height - 20)
+              .attr("dy", "1em")
+              // .attr("transform", "rotate(-90)")
+              .text("Life Expectancy Men");
+
+
+
+
+
+
+
+// UPDATEs
+// common d3 function names:
+// render, update, ready
+//
+// unmodified --------------------------------
+
+function update(new_data) {
+
+
+  var circles = chart.selectAll('circle')
+                        .data(new_data);
+
+
+  circles.enter()
+          .append('circle')
+          .attr('cx', 0)
+          .attr('cy', height);
+
+  circles.transition()
+            // .delay( function(d, i) {
+            //   return i * 250;
+            // })
+            .attr('cx', function(d) {
+              // use the origin key vs the x scale
+              return x_scale(d['LE Men']);
+
+            })
+            .attr('cy', function(d) {
+              // use the words key vs the y scale
+              return y_scale(d['LE Women']) ;
+            })
+            .attr('r', function(d){
+              return Math.sqrt(d['Population'])*2;
+            });
+            // .attr('r', datapoints.sort( function(a, b) {
+            //   // return Math.sqrt(a['Population']) > Math.sqrt(b['Population']);
+            //   return a['Population'] > b['Population'];
+            //
+            // }));
+
+            // .attr('r', 15)
+            // .attr('transform', 'translate(0,30)')
+
+  circles.on('mouseover', tip.show)
+          .on('mouseout', tip.hide);
+}
+
+update(datapoints);
+
+
+
+    </script>
+
+  </body>
+</html>
