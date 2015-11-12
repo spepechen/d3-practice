@@ -11,7 +11,8 @@ Buildiing code templates for different charts.
   - <a href="http://spe.neocities.org/d3-practice/line-graph/mass-shootings.html"> Mass Shooting</a>: animated lines  
 
 * <strong>Map</strong> 
-  - <a href="http://spe.neocities.org/d3-practice/map/US-family-income/US-family-income.html">USA family median income</a>: Geojosn, color scale,  <a href="http://d3-legend.susielu.com/>legend library</a>
+  - <a href="http://spe.neocities.org/d3-practice/map/US-family-income/US-family-income.html">USA family median income</a>: Geojosn, color scale, <a href="http://d3-legend.susielu.com">legend library</a> 
+
   - <a href="http://spe.neocities.org/d3-practice/map/population/population.html">Population of Cities</a>: Geojosn, dot map 
 
 
