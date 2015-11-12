@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js'></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/queue-async/1.0.7/queue.min.js"></script>
+<script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+<script src="d3-legend.js"></script>
+<link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+
+</head>
+<style>
+
+    body {
+      background-color: #1f1f1e;
+    }
+
+    h1 {
+      color: white;
+      text-align: center;
+
+    }
+    .legendLinear {
+
+      /*-align: center;*/
+    }
+/*http://bl.ocks.org/Caged/6476579*/
+    .d3-tip {
+      line-height: 1;
+      font-weight: bold;
+      padding: 12px;
+      background: #f2f2f2;
+      color: #fff;
+      border-radius: 2px;
+    }
+
+    /* Creates a small triangle extender for the tooltip */
+    .d3-tip:after {
+      box-sizing: border-box;
+      display: inline;
+      font-size: 10px;
+      width: 100%;
+      line-height: 1;
+      color: #f2f2f2;
+      content: "\25BC";
+      position: absolute;
+      text-align: center;
+      /*opacity: 0.5;*/
+
+    }
+
+    /* Style northward tooltips differently */
+    .d3-tip.n:after {
+      margin: -1px 0 0 0;
+      top: 100%;
+      left: 0;
+    }
+
+    .container {
+      width: 1000px;
+      margin: 0 auto;
+      text-align: center;
+
+    }
+
+    * {
+      font-family: 'Roboto', sans-serif;
+    }
+
+    p{
+      font-size: 5px;
+      color: #6d6d6a;
+      text-align: center;
+    }
+
+  }
+</style>
+
+<body>
+
+  <div class="container">
+  <div id="text_bloc">
+    <h1>Median Family Income in the U.S. in 2014</h1>
+  </div>
+  <p> Data Source: <a href="http://factfinder.census.gov/faces/tableservices/jsf/pages/productview.xhtml?pid=ACS_14_1YR_S1901&prodType=table">US Census </a></p>
+
+  <div id="map"></div>
+</div>
+  <script>
+
+  // A magic function to add csv data into your geojson
+  // pass it four things:
+  // your geojson data
+  // your csv data
+  // the name of the common column in your JSON properties (i.e. state_name)
+  // the name of the common column in your CSV data (i.e. state)
+  function combineData(geojson_data, csv_data, geojson_key, csv_key) {
+    geojson_data['features'].forEach( function(d_json) {
+      csv_data.forEach( function(d_csv) {
+        if(d_json['properties'][geojson_key] == d_csv[csv_key]) {
+          Object.keys(d_csv).forEach( function(key) { d_json['properties'][key] = d_csv[key]; }); //adding key-value pairs into properties
+        }
+      });
+    });
+  }
+
+  /*
+    PAY ATTENTION TO THIS!!!!
+    It's a call to d3.json INSIDE OF a d3.csv.
+    This is NOT the way you're supposed to do it...
+      ...but it's the way we're going to do it.
+  */
+
+  // Read in the GeoJSON and the CSV, then run the function
+  // queue says, 'hey, we gotta load in two files'
+  // the first one please read it with d3.json
+  // the second one please read it with d3.csv
+  // then run whatever is in .await
+  queue()
+    .defer(d3.json, "gz_2010_us_050_00_5m.json")
+    .defer(d3.csv, "income_mean_median2014.csv")
+    .await( function(error, data, csv_data) {
+      // this is run when both files are finished being read in
+      // error is any errors that cropped up
+      // data is your shapes
+      // csv_data is your csv data
+      //
+      // console.log("Doesn't have the added data yet, properties look like:");
+      // console.log(data['features'][0]['properties']);
+      // console.log(data['features'][1]['properties']);
+      // it's a dict with two items.
+      // First >>>> "type": "FeatureCollection"
+      // Second >>> "features": [ ...another 5 sub-dicts... ]
+      // inside each sub-dict, there are 3 key-value pairs: type, properties, geometry
+
+      // call this magic function that adds the csv_data to the json
+      // MAKE SURE THEY HAVE A COLUMN IN COMMON
+      // state_name is a property inside of data (the geojson file)
+      // state is a column inside of the csv
+      combineData(data, csv_data, "GEO_ID", "GEO.id"); //first "country" from json, second from csv
+
+      // Now your 'data' elements have the info from the csv file
+      // inside of their properties
+
+      // console.log("Has the added data now, properties look like:");
+      // console.log(data['features'][0]['properties']);
+      // console.log(data['features'][1]['properties']);
+      // console.log(data['features'][2]['properties']);
+      // console.log(data['features'][3]['properties']);
+      // console.log(data['features'][4]['properties']);
+
+      // Now you can make your map
+      // var svg = d3.select("#chart").append('svg'); // etc etc
+      //
+      // /*BASE: SVG & MARGIN
+      //    set the whole svg*/
+      //    var svg_height = 500,
+      //        svg_width = 750;
+      //    var svg = d3.select("svg").attr('height', svg_height).attr('width', svg_width);
+
+         // Build our chart space
+         var svg_height = 800, svg_width = 1000;
+         var margins = 30;
+         var height = svg_height - margins * 2;
+         var width = svg_width - margins * 2;
+
+         // Append the svg inside of our div
+         var svg = d3.select("#map")
+                     .append("svg")
+                     .attr('height', svg_height)
+                     .attr('width', svg_width);
+
+         // Add in the g to offset it with the margin space
+         var map = svg.append("g").attr("transform", "translate(" + margins + "," + margins + ")");
+
+         // create our projection
+         var projection = d3.geo.albersUsa()
+                                 .scale(1200) //size of the map
+                                 .translate([width / 2, height / 2]);
+
+        // drawing  boundaries
+         var path = d3.geo.path().projection(projection);
+                                //  var projection = d3.geo.mercator()
+                                //                      // .translate([width / 2, height / 2])
+                                //                      .translate([width, height])
+                                //                      .center([0, 5 ])
+                                //                      .scale(900)
+                                //                      .rotate([-180,0]);
+
+         /* Let's break out our features into another variable... */
+         var counties = data['features']; //access the second item in the whole dict
+
+         var max_income = d3.max( counties, function(d) {
+           return +d['properties']['Families Median income (dollars)'];
+         });
+         min_income = d3.min( counties, function(d) {
+           return +d['properties']['Families Median income (dollars)'];
+         })
+         median_income = d3.median( counties, function(d) {
+           return +d['properties']['Families Median income (dollars)'];
+         })
+         mean_income = d3.mean( counties, function(d) {
+           return +d['properties']['Families Median income (dollars)'];
+         })
+
+        console.log(max_income);
+        console.log(median_income);
+        console.log(min_income);
+
+        // var color_scale = d3.scale.threshold()
+        var color_scale = d3.scale.linear()
+          // .domain([100, 500, 1000, 2500, 5000, 10000])
+          // .range(['violet', 'indigo', 'blue', 'green', 'yellow', 'orange', 'red']);
+
+          .domain([ min_income , median_income, max_income])
+          // .range(['violet', 'indigo', 'blue', 'green', 'yellow', 'orange', 'red']);
+          // .range(['#007fff','#72a0e5','#ff8000', '#ff0000']);
+          .range(['#1a1aff','#551a8b', 'red']);
+
+          // .range(['#00ff00','green','yellow']);
+          // .range(['#1a1aff','#329932', 'yellow']);
+
+
+        var tip = d3.tip()
+                    .attr('class', 'd3-tip')
+                    .offset([-10, 0])
+                    .html(function(d) {
+                      // return d['properties']['NAME'];
+                      // return "<center><span style='color:black'><strong>" + d['properties']['NAME'] + " </strong><br>$ "+ d['properties']['Families Median income (dollars)']+" </span><br>";
+                      return "<center><span style='color:black'><strong>" + d['properties']['NAME'] + " </strong><br>$ "+ d3.format(",")(d['properties']['Families Median income (dollars)'])+" </span><br>";
+                    });
+
+
+        map.selectAll("path")
+            .data(counties)
+            .enter()
+            .append("path")
+            .attr('d', path)
+            .style('fill', function(d) {
+              // return color_scale(d['area']);
+              // d.properties['CENSUSAREA']
+              // console.log(d);
+              return color_scale(d['properties']['Families Median income (dollars)']);
+            })
+            .style('stroke', '#333333')
+            .style('stroke-width', 0.5)
+            .call(tip)
+            .on('mouseover', function(d){
+                 if (d['properties']['Families Median income (dollars)'] != undefined )
+                 tip.show(d);
+               })
+            .on('mouseout', function(d){
+              tip.hide(d);
+               });
+
+           //
+          //      var linear = d3.scale.linear()
+          //    .domain([0,10])
+          //    .range(["rgb(46, 73, 123)", "rgb(71, 187, 94)"]);
+           //
+          //  var svg = d3.select("svg");
+           //
+          //  svg.append("g")
+          //    .attr("class", "legendLinear")
+          //    .attr("transform", "translate(20,20)");
+           //
+          //  var legendLinear = d3.legend.color()
+          //    .shapeWidth(30)
+          //    .orient('horizontal')
+          //    .scale(linear);
+           //
+          //  svg.select(".legendLinear")
+          //    .call(legendLinear);
+
+          //    var linear = d3.scale.linear()
+          //  .domain([0,10])
+          //  .range(["rgb(46, 73, 123)", "rgb(71, 187, 94)"]);
+
+        //  var svg = d3.select("svg");
+
+         map.append("g")
+           .attr("class", "legendLinear")
+           .attr("transform", "translate(20,20)");
+
+         var legendLinear = d3.legend.color()
+                              // .labelFormat(d3.format(","))
+                             .labelFormat(d3.format(","))
+                             .shapeWidth(30)
+                             .shapePadding(4)
+                             .orient('horizontal')
+                             .scale(color_scale);
+
+         svg.select(".legendLinear")
+            // .style('fill', function(d){
+            //   if ((+d) > 80000){
+            //     return '#6d6d6a';
+            //   }else{
+            //     return 'white';
+            //   }
+            //   })
+            // .style('fill', 'white')
+            .style('fill', 'transparent')
+            .attr("font-size", "1.5px")
+            .call(legendLinear);
+
+            // 34,660
+            // 60,329.25
+            // 85,998.5
+            // 111,667.75
+            // 137,337
+          // svg.select(".legendLinear")
+          //     .append("text")
+          //       .attr("transform", "translate(" + (width+8) + "," + (height-25) + ")")
+          //   		.attr("dy", ".35em")
+          //   		.attr("text-anchor", "start")
+          //   		.style("fill", "orange")
+          //       .style("font-size", "17px")
+          //   		.text("Injured");
+
+          // Yes, I am cheating. Hand-crafted.
+          map.append("text")
+                // .attr("transform", "translate(" + (width+8) + "," + (height-25) + ")")
+                .attr("transform", "translate(150,52)")
+            		.attr("text-anchor", "start")
+            		.style("fill", "grey")
+                .style("font-size", "3px")
+            		.text("$137,000");
+
+          map.append("text")
+                // .attr("transform", "translate(" + (width+8) + "," + (height-25) + ")")
+                .attr("transform", "translate(10,52)")
+            		.attr("text-anchor", "start")
+            		.style("fill", "grey")
+                .style("font-size", "3px")
+            		.text("$34,500");
+                      // -----------------137,337");
+  }); // the end of function queue()
+  </script>
+</body>
+</html>

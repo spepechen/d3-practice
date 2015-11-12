@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+
+  <div class="container">
+    <h1>US Mass Shootings  1982-2015 </h1>
+    <p>Data source : <a href="http://www.motherjones.com/politics/2012/12/mass-shootings-mother-jones-full-data">Mother Jones </a>
+
+          <!-- <button ><a href="#" id="myButton">Cases per year</a></button> -->
+   </div>
+<link href='https://fonts.googleapis.com/css?family=Oswald' rel='stylesheet' type='text/css'>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js'></script>
+<script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?2.5.0"></script>
+
+<style>
+
+*{
+  font-family: 'Oswald', sans-serif;
+}
+body {
+  background-color: #fafafa
+}
+
+.container {
+  width: 900px;
+  margin: 0 auto;
+}
+h1{
+  text-align: center;
+}
+
+p{
+  text-align: center;
+  font-size: 11px;
+  color: grey;
+}
+  .axis path,
+  .axis line {
+      fill: none;
+      stroke: black;
+      shape-rendering: crispEdges;
+  }
+
+  .axis text {
+      font-family: sans-serif;
+      font-size: 11px;
+  }
+
+
+</style>
+
+<script>
+var svg_width = 1000;
+var svg_height = 600;
+var margin = 100;
+var height = svg_height - margin * 2;
+var width = svg_width - margin * 2;
+
+
+// ================================ import data set  =================================
+
+d3.csv("cleaned_for_linegraph.csv", function(datapoints){ //impoarting 1st date func
+ // if (error) return console.error(error);
+ // converting some data for first graph,the defalut data type is str
+  datapoints.forEach(function(d){
+    d['year'] = + d['year']; // convert "year" column to number
+    d['numbers']= + d['numbers']; // convert "numbers" column to number //D3 default is str
+  });
+
+// ================================ all other code  ==========================================
+// BASE *********************************************************************************
+// svg, margin, chart (inner canvas), scale
+
+// select container to append to use CSS center it on the page.
+var svg = d3.select(".container").append("svg")
+    .attr("width", svg_width)
+    .attr("height", svg_height);
+
+var xscale = d3.scale.linear().domain([1982,2015]).range([0,width]);
+var yscale = d3.scale.linear().domain([0,160]).range([height, 0]);
+
+var chart = svg.append('g').attr('transform', 'translate(' + margin + ',' + margin + ')');
+
+
+// LINE *********************************************************************************
+// line, grouped, line area, color scale
+
+// tell d3 how to convert a series of data points into a line
+var line = d3.svg.line()
+                  .interpolate("linear")
+                  .x(function(d) {
+                    return xscale(d['year']);
+                  })
+                  .y(function(d) {
+                    return yscale(d['numbers']);
+                  });
+// console.log(line);
+
+
+// var color_scale = d3.scale.category10();
+
+var color_scale = d3.scale.ordinal()
+  .domain(["total_victims", "fatalities", "injured"])
+  .range(["red", "brown" , "orange"]);
+// var color_scale = d3.scale.linear()
+//   .domain([0,200])
+//   .range(['#1a1aff','red']);
+
+
+// d3.nest will save us it will be the best it will group
+// everything together like we've always wanted it to be
+// don't get these chained methods out of order or else!
+var grouped = d3.nest()
+                .key(function(d) {
+                  return d['type']; //group by type
+                })
+                .entries(datapoints);
+
+// {
+//   key: "fatalities",
+//   values: [
+//     { 'number': 0, 'type': fatalities, 'year': 1983 },
+//     { 'number': 28, 'type': fatalities, 'year': 1084 },
+//     { 'number': 6, 'type': fatalities, 'year': 1987 },
+//   ]
+// }
+// console.log(datapoints);
+// console.log(grouped);
+
+
+// create a new <g> attach to "chart" for storing lines_area/all pathes
+var lines_area = chart.append('g');
+
+lines_area.selectAll('path')
+      .data(grouped)
+      .enter()
+      .append('path')
+      .attr("d", function(d) {
+        return line(d['values']);
+      })
+      .style("fill", "none") // always always always
+      .style("stroke", function(d) {
+        return color_scale(d['key']);
+      })
+      // .style('fill-opacity',.5)
+      .attr("stroke-width", 2.5)
+      .attr("stroke-dasharray", function(d) {
+        // console.log(this)
+        var totalLength = d3.select(this).node().getTotalLength();
+        return  totalLength + " " + totalLength;
+      })
+      .attr("stroke-dashoffset", function(d) {
+        var totalLength = d3.select(this).node().getTotalLength();
+        return totalLength;
+      })
+      .transition()
+      .duration(3000)
+      .attr("stroke-dashoffset", 0);
+
+// AXIS *********************************************************************************
+var yAxis = d3.svg.axis().scale(yscale).orient("left");
+// use .tickFormat(d3.format('d')) to not have commas in years
+var xAxis = d3.svg.axis()
+                  .scale(xscale)
+                  .orient("bottom")
+                  .tickFormat(d3.format('d'));
+
+chart.append("g")
+    .attr("class", "x-axis axis")
+    .attr("transform", "translate(0," + height + ")")
+    .attr("stroke-width", 2)
+    .call(xAxis);
+
+chart.append("g")
+    .attr("class", "y-axis axis")
+    .attr("stroke-width", 2)
+    .call(yAxis);
+
+// chart.call(tip);
+chart.append("text")
+          .attr("class", "ylabel")
+          .attr("text-anchor", "end")
+          .attr("y", 7)
+          .attr("dy", "2em")
+          .attr("transform", "rotate(-90)")
+          .attr('font-size', 4)
+          .text("People");
+
+// LABELS ON THE LINE *********************************************************************************
+
+console.log(grouped[0]);
+console.log(grouped[0]['key']);
+console.log(grouped[0]['values'][33]);
+// console.log(grouped[0]['values'][grouped[0]['values'].length-1]);
+
+// console.log(grouped[1]);
+// console.log(grouped[2]);
+
+//handcrafted label position
+chart.append("text")
+      .attr("transform", "translate(" + (width+8) + "," + (height-68-20) + ")")
+  		.attr("dy", ".35em")
+  		.attr("text-anchor", "start")
+  		.style("fill", "red")
+      .style("font-size", "17px")
+  		.text("Total Victims")
+      .attr('opacity', 0)
+      .transition()
+      .delay(1000)
+      .duration(2500)
+      .attr('opacity', 1);
+      // .transition().delay(2000);
+
+chart.append("text")
+      .attr("transform", "translate(" + (width+8) + "," + (height-45-15) + ")")
+  		.attr("dy", ".35em")
+  		.attr("text-anchor", "start")
+  		.style("fill", "brown")
+      .style("font-size", "17px")
+  		.text("Fatalities")
+      .attr('opacity', 0)
+      .transition()
+      .delay(1000)
+      .duration(2500)
+      .attr('opacity', 1);
+
+chart.append("text")
+      .attr("transform", "translate(" + (width+8) + "," + (height-20-5) + ")")
+  		.attr("dy", ".35em")
+  		.attr("text-anchor", "start")
+  		.style("fill", "orange")
+      .style("font-size", "17px")
+  		.text("Injured")
+      .attr('opacity', 0)
+      .transition()
+      .delay(1000)
+      .duration(2500)
+      .attr('opacity', 1);
+
+}); // the end of the d3.csv data importing function
+
+</script>
+</div>
+</body>
+</html>

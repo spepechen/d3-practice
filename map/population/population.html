@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js'></script>
+<link href='https://fonts.googleapis.com/css?family=Maven+Pro' rel='stylesheet' type='text/css'>
+</head>
+<style>
+
+* {
+  background-color: #1E1F23;
+}
+
+h1 {
+  color: white;
+  font-family: 'Maven Pro', sans-serif;
+}
+
+p {
+  color: #fafafa;
+  font-family: 'Maven Pro', sans-serif;
+}
+
+
+.container{
+text-align: center;
+  margin:0 auto;
+//  width:1100px;
+}
+
+
+</style>
+
+<body>
+
+<div class="container">
+  <h1> Population of Cities </h1>
+  <p>Size of circles represents the population of that city.</p>
+  <p>Beige: 0, Yellow: 500000, Red: 1000000 (Unit: People)</p>
+  <!-- <p> The shape of Japan and the the Philippines are way more complete and clear than China and Taiwan....</p> -->
+
+  <div id="map"></div>
+</div>
+  <script>
+  d3.csv("population.csv", function(error, data) {
+  	/* Take a look at our data */
+    console.log(data);
+    // console.log(data[0]);
+    console.log("morning");
+
+    var height = 900, width = 1000;
+
+    var svg = d3.select("#map").append("svg").attr("height", height).attr("width", width);
+
+	// var projection = d3.geo.albers()
+	// 					.scale(500)
+	// 					.center([-101.95, 39.87])
+	// 					.translate([width / 2, height / 2]);
+
+  // Sort the data descendingly to make little circles on top of larger ones
+  data.sort( function(a, b) {
+    // return Math.sqrt(a['Population']) > Math.sqrt(b['Population']);
+    return a['Population'] > b['Population'];
+
+  })
+
+  var projection = d3.geo.mercator()
+                      // .translate([width / 2, height / 2])
+                      .translate([width, height])
+                      .center([-28, -8 ])
+                      .scale(1000)
+                      .rotate([-180,0]);
+
+	console.log(projection);
+	// console.log(projection([40.7, -74]));
+
+    // x
+    // max lng is: 179.316667
+    // min lng is: -179.5
+
+    // y
+    // max lat is: 167.2666667
+    // min lat is: -178.0666667
+
+
+    var xscale = d3.scale.linear().domain([ -179.5, 179.316667]).range([0, width]);
+    var yscale = d3.scale.linear().domain([-178.0666667, 167.2666667]).range([height, 0]);
+
+    var chart = svg.append("g");
+
+    var country_scale = d3.scale.category20();
+    // var pop_scale = d3.scale.linear().domain([0, 31480498]).range(['beige', 'red']);
+    var max_pop = d3.max( data , function(d) {
+      return +d['Population'];
+    });
+    min_pop = d3.min( data , function(d) {
+      return +d['Population'];
+    });
+    median_pop = d3.median( data , function(d) {
+      return +d['Population'];
+    });
+
+    console.log(max_pop);
+    console.log(median_pop);
+    console.log(min_pop);
+
+    // max 31480498
+    // median 10779
+    // min 7
+
+    // var pop_scale = d3.scale.linear().domain([min_pop, median_pop, max_pop]).range(['beige', 'yellow', 'red']);
+    // var pop_scale = d3.scale.linear().domain([min_pop, median_pop, max_pop]).range(['beige', 'yellow', 'red']);
+    // magic number makes beautiful ones
+    var pop_scale = d3.scale.linear().domain([0, 500000, 1000000]).range(['beige', 'yellow', 'red']);
+
+
+// max city population 31480498
+
+    chart.selectAll("circle")
+    		.data(data)
+    		.enter()
+    		.append('circle')
+    		.attr('r', 3)
+    		.attr('cx', function(d) {
+    			var coords = [ d['lng'], d['lat'] ];
+    			var projected_coords = projection(coords);
+    			return projected_coords[0];
+    		})
+    		.attr('cy', function(d) {
+    			var coords = [ d['lng'], d['lat'] ];
+    			var projected_coords = projection(coords);
+    			return projected_coords[1];
+    		})
+        .attr('r', function(d){
+          return Math.sqrt(d['Population'])/180;
+        })
+    		.style('fill-opacity',.5)
+    		.style('fill', function(d) {
+    			// return state_scale(d['state']);
+    			// return state_scale(d['zip']);
+    			return pop_scale(d['Population']);
+        });
+
+
+
+  });
+
+
+
+
+  </script>
+</body>
+</html>
